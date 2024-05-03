@@ -5,7 +5,7 @@ import { Swiper, SwiperSlide } from "swiper/react";
 import { ChevronsRight } from "lucide-react";
 import numeral from "numeral";
 import { API_URL } from "@/constants";
-import { Button, Divider } from "antd";
+import { Button, Divider, Rate } from "antd";
 
 import "swiper/css/navigation";
 import "swiper/css/pagination";
@@ -13,7 +13,20 @@ import "swiper/css/scrollbar";
 
 import "swiper/css";
 
-function NewProduct({ products }) {
+function NewProduct({ products, reviews }) {
+  const THIRTY_DAYS_IN_MS = 40 * 24 * 60 * 60 * 1000; // 30 ngày tính bằng mili giây
+  const currentDate = new Date();
+
+  function filterNewProducts(products) {
+    return products.filter((product) => {
+      const createdAtTimestamp = new Date(product.createdAt).getTime();
+      const timeDifference = currentDate.getTime() - createdAtTimestamp;
+      return timeDifference <= THIRTY_DAYS_IN_MS; // Chỉ lấy các sản phẩm được tạo trong vòng 30 ngày trước
+    });
+  }
+
+  const newProducts = filterNewProducts(products);
+
   const swiperRef = useRef();
 
   const [autoplayConfig, setAutoplayConfig] = React.useState({
@@ -21,6 +34,21 @@ function NewProduct({ products }) {
     disableOnInteraction: false,
     reverseDirection: true,
   });
+
+  const calculateAverageRating = (productId, reviews) => {
+    const productReviews = reviews.filter(
+      (review) => review.productId === productId
+    );
+    const totalReviews = productReviews.length;
+    if (totalReviews === 0) return "0";
+    const totalRating = productReviews.reduce(
+      (sum, review) => sum + review.ratingRate,
+      0
+    );
+    const averageRating = totalRating / totalReviews;
+    return averageRating;
+  };
+
   return (
     <div className="pt-[2.5rem]">
       <div className="flex justify-between">
@@ -84,8 +112,8 @@ function NewProduct({ products }) {
             },
           }}
         >
-          {products &&
-            products.map((item) => {
+          {newProducts &&
+            newProducts.map((item) => {
               return (
                 <SwiperSlide key={item.id}>
                   <div
@@ -136,9 +164,19 @@ function NewProduct({ products }) {
                           </p>
                         )}
                       </div>
+                      <div className="flex justify-center gap-2">
+                        <Rate
+                          allowHalf
+                          disabled
+                          defaultValue={calculateAverageRating(
+                            item.id,
+                            reviews
+                          )}
+                          style={{ fontSize: "18px" }}
+                        />
+                      </div>
                       <Divider>
                         <Button
-                          // type="primary"
                           className="bg-black text-white hover:bg-white hover:text-black font-light"
                           onClick={() => {
                             router.push(`/${item.id}`);
@@ -147,13 +185,6 @@ function NewProduct({ products }) {
                           Chi tiết
                         </Button>
                       </Divider>
-                      {/* <div className="flex justify-between px-[0.5rem]">
-                                                <div className="font-roboto text-sm opacity-50 font-normal flex gap-[4px]">
-                                                    <p>{item.rating.rate}</p>
-                                                    <p>({item.rating.count})</p>
-                                                </div>
-                                                <p className="font-roboto text-sm opacity-50 font-normal">{item.sell} <span>đã bán</span></p>
-                                            </div> */}
                     </div>
                   </div>
                 </SwiperSlide>

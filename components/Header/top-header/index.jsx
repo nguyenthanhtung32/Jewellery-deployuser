@@ -15,27 +15,43 @@ import { useRouter } from "next/router";
 import { UserAddOutlined, LoginOutlined } from "@ant-design/icons";
 import { jwtDecode } from "jwt-decode";
 import axios from "../../../libraries/axiosClient";
-import { message } from "antd";
+import useCartStore from "@/store/CartStore";
+import { toast } from "react-toastify";
 ("../navigation/index");
 
 function TopHeader() {
   const router = useRouter();
   const dropdownRef = useRef(null);
+
   const HandleDropAccount = () => {
     setIsShowAccount(!isShowAccount);
   };
   const [isShowAccount, setIsShowAccount] = React.useState(false);
   const [isLogin, setIsLogin] = useState(false);
   const [customers, setCustomers] = useState([]);
+  const [customerId, setCustomerId] = React.useState("");
 
   useEffect(() => {
     const token = localStorage.getItem("token");
 
     if (token) {
       setIsLogin(true);
+      const decoded = jwtDecode(token);
+      setCustomerId(decoded._id);
     }
   }, [router]);
 
+  const handleLogout = () => {
+    localStorage.removeItem("token");
+    setIsLogin(false);
+
+    router.push("/");
+    toast.success("Đăng xuất thành công");
+  };
+
+  const { getCartItems } = useCartStore();
+
+  const cartItems = getCartItems(customerId);
 
   const handleClickOutside = (e) => {
     if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
@@ -49,27 +65,6 @@ function TopHeader() {
     };
     document.addEventListener("mousedown", handleDocumentClick);
   }, [isShowAccount, setIsShowAccount]);
-
-  // useEffect(() => {
-  //   const fetchCart = async () => {
-  //     try {
-  //       const token = localStorage.getItem("token");
-
-  //       const decoded = jwt_decode(token);
-
-  //       const customerId = decoded._id;
-
-  //       await axios.get(`/cart/${customerId}`);
-  //     } catch (error) {
-  //       console.error(error);
-  //     }
-  //   };
-  //   fetchCart();
-  // }, [router]);
-
-  useEffect(() => {
-    fetchCustomers();
-  }, []);
 
   const fetchCustomers = async () => {
     try {
@@ -87,48 +82,33 @@ function TopHeader() {
   };
 
   useEffect(() => {
-    const token = localStorage.getItem("token");
-
-    if (token) {
-      setIsLogin(true);
+    if (customerId) {
+      // Check if customerId exists
+      fetchCustomers(); // Fetch customer data for the current customerId
     }
-  }, [router]);
-
-  const handleLogout = () => {
-    localStorage.removeItem("token");
-    setIsLogin(false);
-    router.push("/");
-    message.success("Đăng xuất thành công");
-  };
+  }, [customerId]); // useEffect will run again whenever customerId changes
 
   const [open, setOpen] = React.useState(false);
+
   const showDrawer = () => {
     setOpen(true);
   };
+
   const onClose = () => {
     setOpen(false);
   };
+
   return (
     <div className="flex justify-between container pt-[0.625rem]">
-      {/* <div className="sm:flex hidden justify-center items-center gap-[0.25rem] text-center ">
-        <Phone className="text-primry" />
-        <Link
-          href="tel:+190028979"
-          aria-label="phone"
-          className="text-xl font-roboto font-medium leading-7 text-primry"
-        >
-          190028979
-        </Link>
-      </div> */}
       <Link href="/" className="flex justify-end">
         <img
           src="/img/logo.png"
           alt="user"
           title="wiicamp-logo"
-          className="md:w-[3.375rem] md:h-[3.375rem] w-[2.5rem] h-[2.5rem]"
+          className="md:w-[5rem] md:h-[4rem] w-[2.5rem] h-[2.5rem]"
         />
         <span className="items-center flex text-primry text-xl font-normal leading-7 font-roboto">
-          Jewellery
+          JEWELLERY
         </span>
       </Link>
 
@@ -150,7 +130,7 @@ function TopHeader() {
                 />
               </button>
               <span className="text-sm text-black leading-7 font-normal sm:block hidden font-roboto">
-                {customers.firstName} {customers.lastName}
+                {customers.lastName} {customers.firstName}
               </span>
               <div
                 id="myDropdown"
@@ -194,11 +174,11 @@ function TopHeader() {
               <Link href="/cart" aria-label="cart">
                 <div className="relative">
                   <ShoppingCart className="md:w-[1.75rem] md:h-[1.75rem] w-[1.5rem] h-[1.5rem]" />
-                  {/* {cartItems.length >= 0 && ( */}
-                  <span className="top-[-8px] right-[-6px] absolute rounded-full bg-red text-white text-xs font-normal leading-[1.125rem] shrink-0 w-[1.25rem] h-[1.25rem] flex justify-center">
-                    {/* {cartItems.length} */} 0
-                  </span>
-                  {/* )} */}
+                  {cartItems.length >= 0 && (
+                    <span className="top-[-8px] right-[-6px] absolute rounded-full bg-red text-white text-xs font-normal leading-[1.125rem] shrink-0 w-[1.25rem] h-[1.25rem] flex justify-center">
+                      {cartItems.length}
+                    </span>
+                  )}
                 </div>
               </Link>
               <span className="text-sm text-black leading-7 font-normal sm:block hidden font-roboto">

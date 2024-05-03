@@ -5,7 +5,7 @@ import { Swiper, SwiperSlide } from "swiper/react";
 import { ChevronsRight } from "lucide-react";
 import numeral from "numeral";
 import { API_URL } from "@/constants";
-import { Button, Divider } from "antd";
+import { Button, Divider, Rate } from "antd";
 import router from "next/router";
 
 import "swiper/css/navigation";
@@ -14,7 +14,21 @@ import "swiper/css/scrollbar";
 
 import "swiper/css";
 
-function SellingProduct({ products }) {
+function SellingProduct({ products, reviews }) {
+  const calculateAverageRating = (productId, reviews) => {
+    const productReviews = reviews.filter(
+      (review) => review.productId === productId
+    );
+    const totalReviews = productReviews.length;
+    if (totalReviews === 0) return "0";
+    const totalRating = productReviews.reduce(
+      (sum, review) => sum + review.ratingRate,
+      0
+    );
+    const averageRating = totalRating / totalReviews;
+    return averageRating;
+  };
+
   return (
     <div className="pt-[2.5rem]">
       <div className="flex justify-between">
@@ -44,34 +58,28 @@ function SellingProduct({ products }) {
             depth: 100,
             modifier: 2.5,
           }}
-          // pagination={true}
           modules={[Autoplay, EffectCoverflow, Pagination]}
           speed={3000}
           breakpoints={{
             0: {
               slidesPerView: 1,
               centeredSlides: true,
-              // initialSlide: 3,
             },
             320: {
               slidesPerView: 1,
               centeredSlides: true,
-              // initialSlide: 3,
             },
             360: {
               slidesPerView: 2,
               centeredSlides: true,
-              // initialSlide: 3,
             },
             900: {
               slidesPerView: 2,
               centeredSlides: true,
-              // initialSlide: 3,
             },
             1200: {
               slidesPerView: 3,
               centeredSlides: true,
-              // initialSlide: 3,
             },
           }}
         >
@@ -128,12 +136,18 @@ function SellingProduct({ products }) {
                         )}
                       </div>
                       <div className="flex justify-center gap-2">
-                        <p>Đã bán : </p>
-                        <p>{item.stockQuantity} cái</p>
+                        <Rate
+                          allowHalf
+                          disabled
+                          defaultValue={calculateAverageRating(
+                            item.id,
+                            reviews
+                          )}
+                          style={{ fontSize: "18px" }}
+                        />
                       </div>
                       <Divider>
                         <Button
-                          // type="primary"
                           className="bg-black text-white hover:bg-white hover:text-black font-light"
                           onClick={() => {
                             router.push(`/${item.id}`);
@@ -142,13 +156,6 @@ function SellingProduct({ products }) {
                           Chi tiết
                         </Button>
                       </Divider>
-                      {/* <div className="flex justify-between px-[0.5rem]">
-                                                <div className="font-roboto text-sm opacity-50 font-normal flex gap-[4px]">
-                                                    <p>{item.rating.rate}</p>
-                                                    <p>({item.rating.count})</p>
-                                                </div>
-                                                <p className="font-roboto text-sm opacity-50 font-normal">{item.sell} <span>đã bán</span></p>
-                                            </div> */}
                     </div>
                   </div>
                 </SwiperSlide>

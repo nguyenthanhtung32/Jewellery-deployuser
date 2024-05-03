@@ -1,26 +1,21 @@
 import router from "next/router";
 import React, { useState, memo } from "react";
-import { ShoppingCart, Search } from "lucide-react";
-import { BackTop, Button, Divider } from "antd";
+import { Search } from "lucide-react";
+import { BackTop, Button, Divider, Rate } from "antd";
 import numeral from "numeral";
 import Link from "next/link";
 import axiosClient from "@/libraries/axiosClient";
 import { API_URL } from "@/constants";
 
-function Products({ products, categories }) {
+function Products({ products, categories, reviews }) {
   const [visibleProducts, setVisibleProducts] = useState(20);
   const [selectedCategories, setSelectedCategories] = useState([]);
   const [selectedCategory, setSelectedCategory] = useState("");
   const [selectedPrice, setSelectedPrice] = useState("");
-  const [searchKeyword, setSearchKeyword] = useState("");
   const [selectedMaterial, setSelectedMaterial] = useState("");
   const [selectedStone, setSelectedStone] = useState("");
 
   const totalProducts = products.length;
-
-  const handleAddCart = (productId) => {
-    addToCart(productId);
-  };
 
   const handleShowMore = () => {
     const newVisibleProducts = visibleProducts + 20;
@@ -76,12 +71,6 @@ function Products({ products, categories }) {
       );
     }
 
-    if (searchKeyword) {
-      filteredProducts = filteredProducts.filter((product) =>
-        product.productName.toLowerCase().includes(searchKeyword.toLowerCase())
-      );
-    }
-
     return filteredProducts;
   };
 
@@ -126,6 +115,21 @@ function Products({ products, categories }) {
       return price <= parseInt(maxPrice);
     }
   };
+
+  const calculateAverageRating = (productId, reviews) => {
+    const productReviews = reviews.filter(
+      (review) => review.productId === productId
+    );
+    const totalReviews = productReviews.length;
+    if (totalReviews === 0) return "0";
+    const totalRating = productReviews.reduce(
+      (sum, review) => sum + review.ratingRate,
+      0
+    );
+    const averageRating = totalRating / totalReviews;
+    return averageRating;
+  };
+
   const selectedDisplayValue = formatSelectedValue(selectedPrice);
   const filteredProducts = filterProducts();
 
@@ -147,7 +151,7 @@ function Products({ products, categories }) {
               <option value="" disabled hidden>
                 Danh Mục
               </option>
-              {categories.slice(1, 6).map((item) => (
+              {categories.slice(1, 5).map((item) => (
                 <option key={item._id} value={item._id}>
                   {item.name}
                 </option>
@@ -193,25 +197,6 @@ function Products({ products, categories }) {
               <option value="200000000 -">Trên 200,000,000đ</option>
             </select>
           </div>
-          <div className="w-1/4 relative flex ">
-            <input
-              id="search"
-              className="border w-full px-2 py-1.5 text-left"
-              placeholder="Tìm kiếm..."
-              required
-              type="text"
-              onChange={(e) => setSearchKeyword(e.target.value)}
-              value={searchKeyword}
-            />
-            <button
-              type="submit"
-              id="search"
-              aria-label="search"
-              className="absolute right-2.5 mt-1.5 mr-1"
-            >
-              <Search className="text-primry" />
-            </button>
-          </div>
           <div className="w-1/4 md:flex border">
             <select
               id="filter-material"
@@ -254,7 +239,7 @@ function Products({ products, categories }) {
                 }
               </span>
               <button
-                className="ml-1 text-red-500 ml-3 pb-0.5"
+                className="ml-1 text-red-500  pb-0.5"
                 onClick={() => setSelectedCategory("")}
               >
                 x
@@ -266,7 +251,7 @@ function Products({ products, categories }) {
             <div className="flex items-center mr-2 border px-1 py-0.1 mt-3 bg-pink">
               <span>{selectedDisplayValue}</span>
               <button
-                className="ml-1 text-red-500 ml-3 pb-0.5"
+                className="ml-1 text-red-500 pb-0.5"
                 onClick={() => setSelectedPrice("")}
               >
                 x
@@ -278,7 +263,7 @@ function Products({ products, categories }) {
             <div className="flex items-center mr-2 border px-1 py-0.1 mt-3 bg-pink">
               <span>{selectedMaterial}</span>
               <button
-                className="ml-1 text-red-500 ml-3 pb-0.5"
+                className="ml-1 text-red-500 pb-0.5"
                 onClick={() => setSelectedMaterial("")}
               >
                 x
@@ -290,7 +275,7 @@ function Products({ products, categories }) {
             <div className="flex items-center mr-2 border px-1 py-0.1 mt-3 bg-pink">
               <span>{selectedStone}</span>
               <button
-                className="ml-1 text-red-500 ml-3 pb-0.5"
+                className="ml-1 text-red-500 pb-0.5"
                 onClick={() => setSelectedStone("")}
               >
                 x
@@ -303,7 +288,7 @@ function Products({ products, categories }) {
         {filteredProducts.slice(0, visibleProducts).map((item) => (
           <div
             key={item._id}
-            className="sm:min-w-[15.625rem] sm:min-h-[12.5rem] min-w-[100px] min-h-[100px] shadow-md rounded hover:bg-second-3 flex flex-col justify-center items-center"
+            className="sm:min-w-[15.625rem] sm:min-h-[12.5rem] min-w-[100px] min-h-[100px] shadow-md rounded hover:bg-second-3"
             style={{
               background: "-webkit-linear-gradient(top,#fff 0%,#f7f7f7 100%)",
             }}
@@ -313,22 +298,22 @@ function Products({ products, categories }) {
                 <img
                   src={`${API_URL}/${item.imageUrl}`}
                   alt={`slide-${item.id}`}
-                  className="hover:-translate-y-1 hover:scale-105  duration-300 sm:w-full sm:block flex items-center w-[7.5rem] object-contain"
+                  className="hover:-translate-y-1 hover:scale-125  duration-300 sm:w-full sm:block flex items-center w-[7.5rem] object-contain"
                 />
               </Link>
+              {item.discount > 0 && (
+                <div className="!absolute top-0 right-0 bg-primry font-poppins text-sm font-normal py-[4px] sm:px-[25px] px-[10px] text-white">
+                  -{item.discount}%
+                </div>
+              )}
             </div>
-            {item.discount > 0 && (
-              <span className="!absolute top-0 left-0 bg-primry font-poppins text-sm font-normal py-[4px] sm:px-[25px] px-[10px] text-white">
-                -{item.discount}%
-              </span>
-            )}
-            <div className="flex flex-col gap-[6px]">
-              <p className="font-roboto text-sm font-normal flex justify-center xxl:truncate text-center">
+            <div className="relative flex flex-col gap-[6px]">
+              <p className="font-roboto text-sm font-normal h-10 flex justify-center xxl:truncate text-center">
                 {item.productName}
               </p>
-              <span className="font-roboto text-sm font-normal flex justify-center">
+              <p className="font-roboto text-sm font-normal text-center">
                 {item.code}
-              </span>
+              </p>
               <div className="flex justify-around">
                 {item.discount ? (
                   <>
@@ -348,24 +333,25 @@ function Products({ products, categories }) {
                   </p>
                 )}
               </div>
-              <Divider>
-                <Button
-                  className="bg-black text-white hover:bg-white font-light"
-                  onClick={() => {
-                    router.push(`/${item.id}`);
-                  }}
-                >
-                  Chi tiết
-                </Button>
-              </Divider>
-              {/* <div className="flex justify-between px-[0.5rem]">
-                  <div className="font-roboto text-sm opacity-50 font-normal flex gap-[4px]">
-                      <p>{item.rating.rate}</p>
-                      <p>({item.rating.count})</p>
-                  </div>
-                  <p className="font-roboto text-sm opacity-50 font-normal">{item.sell} <span>đã bán</span></p>
-              </div> */}
             </div>
+            <div className="flex justify-center gap-2 mt-2">
+              <Rate
+                allowHalf
+                disabled
+                defaultValue={calculateAverageRating(item.id, reviews)}
+                style={{ fontSize: "18px" }}
+              />
+            </div>
+            <Divider className="h-4">
+              <Button
+                className="bg-black text-white hover:bg-white font-light"
+                onClick={() => {
+                  router.push(`/${item.id}`);
+                }}
+              >
+                Chi tiết
+              </Button>
+            </Divider>
           </div>
         ))}
       </div>
@@ -389,15 +375,18 @@ export default memo(Products);
 
 export async function getStaticProps() {
   try {
-    const [productsResponse, categoriesResponse] = await Promise.all([
-      axiosClient.get("/products"),
-      axiosClient.get("/categories"),
-    ]);
+    const [productsResponse, categoriesResponse, reviewsResponse] =
+      await Promise.all([
+        axiosClient.get("/products"),
+        axiosClient.get("/categories"),
+        axiosClient.get("/reviews"),
+      ]);
 
     return {
       props: {
         products: productsResponse.data,
         categories: categoriesResponse.data,
+        reviews: reviewsResponse.data,
       },
     };
   } catch (error) {

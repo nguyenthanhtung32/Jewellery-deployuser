@@ -4,11 +4,12 @@ import axiosClient from "@/libraries/axiosClient";
 import FacebookMsg from "@/components/Facebook/FacebookMsg"
 import { BackTop } from "antd";
 
-function Home({ products }) {
+function Home({ products, reviews }) {
   return (
     <main className="container">
       <HomePage
         products={products}
+        reviews={reviews}
       />
       <FacebookMsg />
       <BackTop />
@@ -19,11 +20,24 @@ function Home({ products }) {
 export default memo(Home);
 
 export async function getServerSideProps() {
-  const responseProduct = await axiosClient.get("/products");
-  const products = responseProduct.data;
-  return {
-    props: {
-      products,
-    },
-  };
+  try {
+    const [productsResponse, categoriesResponse, reviewsResponse] =
+      await Promise.all([
+        axiosClient.get("/products"),
+        axiosClient.get("/categories"),
+        axiosClient.get("/reviews"),
+      ]);
+
+    return {
+      props: {
+        products: productsResponse.data,
+        categories: categoriesResponse.data,
+        reviews: reviewsResponse.data,
+      },
+    };
+  } catch (error) {
+    return {
+      notFound: true,
+    };
+  }
 }

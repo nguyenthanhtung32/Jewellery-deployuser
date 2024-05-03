@@ -1,15 +1,14 @@
 import React, { useState, memo } from "react";
 import { Search } from "lucide-react";
-import { Divider, BackTop, Button } from "antd";
+import { Divider, BackTop, Button, Rate } from "antd";
 import numeral from "numeral";
 import Link from "next/link";
 import axiosClient from "@/libraries/axiosClient";
 import { API_URL } from "@/constants";
 
-function WeddingJewelry({ products }) {
+function WeddingJewelry({ products, reviews }) {
   const [visibleProducts, setVisibleProducts] = useState(8);
   const [selectedPrice, setSelectedPrice] = useState("");
-  const [searchKeyword, setSearchKeyword] = useState("");
   const [selectedMaterial, setSelectedMaterial] = useState("");
   const [selectedStone, setSelectedStone] = useState("");
 
@@ -53,12 +52,6 @@ function WeddingJewelry({ products }) {
     if (selectedPrice) {
       filteredProducts = filteredProducts.filter((product) =>
         checkDiscountedPriceRange(product, selectedPrice)
-      );
-    }
-
-    if (searchKeyword) {
-      filteredProducts = filteredProducts.filter((product) =>
-        product.productName.toLowerCase().includes(searchKeyword.toLowerCase())
       );
     }
 
@@ -108,6 +101,20 @@ function WeddingJewelry({ products }) {
   };
   const selectedDisplayValue = formatSelectedValue(selectedPrice);
   const filteredProducts = filterProducts();
+
+  const calculateAverageRating = (productId, reviews) => {
+    const productReviews = reviews.filter(
+      (review) => review.productId === productId
+    );
+    const totalReviews = productReviews.length;
+    if (totalReviews === 0) return "0";
+    const totalRating = productReviews.reduce(
+      (sum, review) => sum + review.ratingRate,
+      0
+    );
+    const averageRating = totalRating / totalReviews;
+    return averageRating;
+  };
 
   return (
     <>
@@ -190,26 +197,6 @@ function WeddingJewelry({ products }) {
                 <option value="Đá">Đá</option>
               </select>
             </div>
-
-            <div className="w-1/4 relative flex">
-              <input
-                id="search"
-                className="border w-full px-2 py-1.5 text-left"
-                placeholder="Tìm kiếm..."
-                required
-                type="text"
-                onChange={(e) => setSearchKeyword(e.target.value)}
-                value={searchKeyword}
-              />
-              <button
-                type="submit"
-                id="search"
-                aria-label="search"
-                className="absolute right-2.5 mt-1.5 mr-1"
-              >
-                <Search className="text-primry" />
-              </button>
-            </div>
           </div>
           <div className="flex items-center mb-5">
             {selectedPrice && (
@@ -223,7 +210,6 @@ function WeddingJewelry({ products }) {
                 </button>
               </div>
             )}
-
             {selectedMaterial && (
               <div className="flex items-center mr-2 border px-1 py-0.1 mt-3 bg-pink">
                 <span>{selectedMaterial}</span>
@@ -272,15 +258,16 @@ function WeddingJewelry({ products }) {
                     <img
                       src={`${API_URL}/${item.imageUrl}`}
                       alt={`slide-${item.id}`}
-                      className="hover:-translate-y-1 hover:scale-105  duration-300 sm:w-full sm:block flex items-center w-[7.5rem] object-contain"
+                      className="hover:-translate-y-1 hover:scale-125  duration-300 sm:w-full sm:block flex items-center w-[7.5rem] object-contain"
                     />
                   </Link>
+                  {item.discount > 0 && (
+                    <span className="!absolute top-0 right-0 bg-primry font-poppins text-sm font-normal py-[4px] sm:px-[25px] px-[10px] text-white">
+                      -{item.discount}%
+                    </span>
+                  )}
                 </div>
-                {item.discount > 0 && (
-                  <span className="!absolute top-0 left-0 bg-primry font-poppins text-sm font-normal py-[4px] sm:px-[25px] px-[10px] text-white">
-                    -{item.discount}%
-                  </span>
-                )}
+
                 <div className="flex flex-col gap-[6px]">
                   <p className="font-roboto mx-4 text-sm font-normal flex justify-center xxl:truncate text-center">
                     {item.productName}
@@ -307,6 +294,14 @@ function WeddingJewelry({ products }) {
                       </p>
                     )}
                   </div>
+                  <div className="flex justify-center gap-2">
+                    <Rate
+                      allowHalf
+                      disabled
+                      defaultValue={calculateAverageRating(item.id, reviews)}
+                      style={{ fontSize: "18px" }}
+                    />
+                  </div>
                   <Divider>
                     <Button
                       className="bg-black text-white hover:bg-white font-light"
@@ -322,7 +317,7 @@ function WeddingJewelry({ products }) {
             ))}
         </div>
         <span className="flex justify-center font-elle mt-7 mb-3">
-          Hiển thị{" "}
+          Hiển thị
           {Math.min(
             filteredProducts.filter(
               (item) => item.categoryId === "65d72854f159c29036e3b592"
@@ -384,7 +379,7 @@ function WeddingJewelry({ products }) {
                     <img
                       src={`${API_URL}/${item.imageUrl}`}
                       alt={`slide-${item.id}`}
-                      className="hover:-translate-y-1 hover:scale-105  duration-300 sm:w-full sm:block flex items-center w-[7.5rem] object-contain"
+                      className="hover:-translate-y-1 hover:scale-125  duration-300 sm:w-full sm:block flex items-center w-[7.5rem] object-contain"
                     />
                   </Link>
                 </div>
@@ -419,6 +414,14 @@ function WeddingJewelry({ products }) {
                       </p>
                     )}
                   </div>
+                  <div className="flex justify-center gap-2">
+                    <Rate
+                      allowHalf
+                      disabled
+                      defaultValue={calculateAverageRating(item.id, reviews)}
+                      style={{ fontSize: "18px" }}
+                    />
+                  </div>
                   <Divider>
                     <Button
                       className="bg-black text-white hover:bg-white font-light"
@@ -434,7 +437,7 @@ function WeddingJewelry({ products }) {
             ))}
         </div>
         <span className="flex justify-center font-elle mt-7 mb-3">
-          Hiển thị{" "}
+          Hiển thị
           {Math.min(
             filteredProducts.filter(
               (item) => item.categoryId === "65f12a3743051681d5a2c8bd"
@@ -467,15 +470,18 @@ export default memo(WeddingJewelry);
 
 export async function getStaticProps() {
   try {
-    const [productsResponse, categoriesResponse] = await Promise.all([
-      axiosClient.get("/products"),
-      axiosClient.get("/categories"),
-    ]);
+    const [productsResponse, categoriesResponse, reviewsResponse] =
+      await Promise.all([
+        axiosClient.get("/products"),
+        axiosClient.get("/categories"),
+        axiosClient.get("/reviews"),
+      ]);
 
     return {
       props: {
         products: productsResponse.data,
         categories: categoriesResponse.data,
+        reviews: reviewsResponse.data,
       },
     };
   } catch (error) {

@@ -6,15 +6,15 @@ import Diamond from "./diamond-jewelry";
 import GoldJewelry from "./gold-jewelry";
 import SliverJewelry from "./silver-jewelry";
 
-function HomePage({products}) {
+function HomePage({products, reviews}) {
     return (
         <>
             <Slide />
-            <SellingProducts products={products}/>
-            <NewProduct products={products}/>
-            <Diamond products={products}/>
-            <GoldJewelry products={products}/>
-            <SliverJewelry products={products}/>
+            <SellingProducts products={products} reviews={reviews}/>
+            <NewProduct products={products} reviews={reviews}/>
+            <Diamond products={products} reviews={reviews}/>
+            <GoldJewelry products={products} reviews={reviews}/>
+            <SliverJewelry products={products} reviews={reviews}/>
         </>
     )
 }

@@ -6,7 +6,6 @@ import { useRouter } from "next/router";
 import {
   Input,
   Form,
-  message,
   Select,
   Space,
   Modal,
@@ -24,6 +23,8 @@ import {
 } from "@ant-design/icons";
 import { jwtDecode } from "jwt-decode";
 import ImgCrop from "antd-img-crop";
+import { Info } from "lucide-react";
+import { toast } from "react-toastify";
 
 const apiName = "/customers";
 
@@ -110,14 +111,14 @@ function Account() {
           setRefresh((f) => f + 1);
           updateForm.resetFields();
           setOpen(false);
-          message.success("Cập nhật thành công!");
+          toast.success("Cập nhật thành công!");
         })
         .catch((err) => {
           console.error(err);
-          message.error("Cập nhật thất bại");
+          toast.error("Cập nhật thất bại");
         });
     } else {
-      message.error("Cập nhật thất bại.");
+      toast.error("Cập nhật thất bại.");
     }
     [refresh];
   };
@@ -144,6 +145,10 @@ function Account() {
       setIsLogin(true);
     }
   }, [router]);
+
+  const HanleChangePass = () => {
+    router.push("/change-password");
+  }
 
   return (
     <>
@@ -193,11 +198,11 @@ function Account() {
                           onChange={(info) => {
                             if (info.file.status === "done") {
                               router.reload();
-                              message.success(
+                              toast.success(
                                 "Cập nhật ảnh đại diện thành công!"
                               );
                             } else if (info.file.status === "error") {
-                              message.error("Cập nhật ảnh đại diện thất bại.");
+                              toast.error("Cập nhật ảnh đại diện thất bại.");
                             }
                           }}
                         >
@@ -242,15 +247,18 @@ function Account() {
                       </div>
                     </div>
                   </div>
-                  <div className="text-center pt-6">
+                  <div className="text-center pt-6 flex gap-4 items-center justify-center">
                     <button
                       onClick={() => {
                         setOpen(true);
                         setUpdateId(customers._id);
                       }}
-                      className="mt-8 mb-8 bg-black text-white px-4 py-2 rounded-lg shadow-lg hover:bg-gray hover:text-black transition-colors duration-300 w-[250px]"
+                      className="mt-8 mb-8 bg-black text-white px-4 py-2 rounded-lg shadow-lg hover:bg-white border border-black hover:text-black transition-colors duration-300 w-[250px]"
                     >
                       Chỉnh sửa thông tin cá nhân
+                    </button>
+                    <button onClick={HanleChangePass} className="mt-8 mb-8 bg-black text-white px-4 py-2 rounded-lg shadow-lg hover:bg-white border border-black hover:text-black transition-colors duration-300 w-[250px]">
+                      Đổi mật khẩu
                     </button>
                   </div>
                 </div>
@@ -441,7 +449,10 @@ function Account() {
           )}
         </div>
       ) : (
-        <div>no data</div>
+        <div className="my-20 mx-60  flex justify-center font-bold">
+          <Info />
+          <p className="ml-3">Không có thông tin dữ liệu</p>
+        </div>
       )}
       <BackTop />
     </>

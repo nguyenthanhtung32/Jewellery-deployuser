@@ -1,4 +1,4 @@
-import { User, ShoppingBag, LogOut } from "lucide-react";
+import { User, ShoppingBag, FileLock } from "lucide-react";
 const listAccount = [
   {
     id: "1",

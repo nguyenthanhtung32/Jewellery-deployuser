@@ -183,3 +183,30 @@ body {
   -o-animation: my 1000ms infinite;
   animation: my 700ms infinite;
 }
+
+.ant-modal-wrap {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  display: flex;
+
+}
+
+.ant-modal-content {
+  background-color: white;
+}
+
+.ant-modal-footer .ant-btn-primary {
+  background-color: black;
+  color: #fff;
+  border-color: black;
+
+}
+
+.ant-modal-footer .ant-btn-primary:hover {
+  background-color: white;
+  border-color: black;
+  color: black;
+}

@@ -10,18 +10,6 @@ import "swiper/css";
 
 function Slide() {
     const listSlider = [
-        // {
-        //     id: "1",
-        //     src: "./img/anh-banner-2.jpg",
-        // },
-        // {
-        //     id: "2",
-        //     src: "./img/anh-slide-1.jpg",
-        // },
-        // {
-        //     id: "3",
-        //     src: "./img/anh-slide-5.jpg",
-        // },
         {
             id: "4",
             src: "./img/anh-banner-5.jpg",

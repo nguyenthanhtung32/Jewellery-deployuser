@@ -5,7 +5,7 @@ import { Swiper, SwiperSlide } from "swiper/react";
 import { useRouter } from "next/router";
 import numeral from "numeral";
 import { API_URL } from "@/constants";
-import { Button, Divider } from "antd";
+import { Button, Divider, Rate } from "antd";
 
 import "swiper/css/navigation";
 import "swiper/css/pagination";
@@ -13,7 +13,7 @@ import "swiper/css/scrollbar";
 
 import "swiper/css";
 
-function GoldJewelry({ products }) {
+function GoldJewelry({ products, reviews }) {
   const router = useRouter();
 
   const handleLink = () => {
@@ -27,6 +27,20 @@ function GoldJewelry({ products }) {
   });
 
   const swiperRef = useRef();
+
+  const calculateAverageRating = (productId, reviews) => {
+    const productReviews = reviews.filter(
+      (review) => review.productId === productId
+    );
+    const totalReviews = productReviews.length;
+    if (totalReviews === 0) return "0";
+    const totalRating = productReviews.reduce(
+      (sum, review) => sum + review.ratingRate,
+      0
+    );
+    const averageRating = totalRating / totalReviews;
+    return averageRating;
+  };
 
   return (
     <div className="border-b border-primry">
@@ -141,6 +155,17 @@ function GoldJewelry({ products }) {
                             </p>
                           )}
                         </div>
+                        <div className="flex justify-center gap-2">
+                          <Rate
+                            allowHalf
+                            disabled
+                            defaultValue={calculateAverageRating(
+                              item.id,
+                              reviews
+                            )}
+                            style={{ fontSize: "18px" }}
+                          />
+                        </div>
                         <Divider>
                           <Button
                             className="bg-black text-white hover:bg-white font-light"
@@ -151,13 +176,6 @@ function GoldJewelry({ products }) {
                             Chi tiết
                           </Button>
                         </Divider>
-                        {/* <div className="flex justify-between px-[0.5rem]">
-                                                <div className="font-roboto text-sm opacity-50 font-normal flex gap-[4px]">
-                                                    <p>{item.rating.rate}</p>
-                                                    <p>({item.rating.count})</p>
-                                                </div>
-                                                <p className="font-roboto text-sm opacity-50 font-normal">{item.sell} <span>đã bán</span></p>
-                                            </div> */}
                       </div>
                     </div>
                   </SwiperSlide>

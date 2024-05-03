@@ -44,6 +44,7 @@ module.exports = {
         gray: "#D1CFCF",
         white: "#ffffff",
         pink: "#f4f4f4",
+        yellow: "#ffd700",
       }
     },
   },

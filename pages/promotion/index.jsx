@@ -1,18 +1,17 @@
 import router from "next/router";
 import React, { useState, memo } from "react";
 import { Search } from "lucide-react";
-import { BackTop, Button, Divider } from "antd";
+import { BackTop, Button, Divider, Rate } from "antd";
 import numeral from "numeral";
 import Link from "next/link";
 import axiosClient from "@/libraries/axiosClient";
 import { API_URL } from "@/constants";
 
-function Promotion({ products, categories }) {
+function Promotion({ products, categories, reviews }) {
   const [visibleProducts, setVisibleProducts] = useState(20);
   const [selectedCategories, setSelectedCategories] = useState([]);
   const [selectedCategory, setSelectedCategory] = useState("");
   const [selectedPrice, setSelectedPrice] = useState("");
-  const [searchKeyword, setSearchKeyword] = useState("");
   const [selectedMaterial, setSelectedMaterial] = useState("");
   const [selectedStone, setSelectedStone] = useState("");
 
@@ -72,12 +71,6 @@ function Promotion({ products, categories }) {
       );
     }
 
-    if (searchKeyword) {
-      filteredProducts = filteredProducts.filter((product) =>
-        product.productName.toLowerCase().includes(searchKeyword.toLowerCase())
-      );
-    }
-
     return filteredProducts;
   };
 
@@ -124,6 +117,20 @@ function Promotion({ products, categories }) {
   };
   const selectedDisplayValue = formatSelectedValue(selectedPrice);
   const filteredProducts = filterProducts();
+
+  const calculateAverageRating = (productId, reviews) => {
+    const productReviews = reviews.filter(
+      (review) => review.productId === productId
+    );
+    const totalReviews = productReviews.length;
+    if (totalReviews === 0) return "0";
+    const totalRating = productReviews.reduce(
+      (sum, review) => sum + review.ratingRate,
+      0
+    );
+    const averageRating = totalRating / totalReviews;
+    return averageRating;
+  };
 
   return (
     <div className="container mt-5">
@@ -185,25 +192,6 @@ function Promotion({ products, categories }) {
               </option>
               <option value="200000000 -">Trên 200,000,000đ</option>
             </select>
-          </div>
-          <div className="w-1/4 relative flex">
-            <input
-              id="search"
-              className="border w-full px-2 py-1.5 text-left"
-              placeholder="Tìm kiếm..."
-              required
-              type="text"
-              onChange={(e) => setSearchKeyword(e.target.value)}
-              value={searchKeyword}
-            />
-            <button
-              type="submit"
-              id="search"
-              aria-label="search"
-              className="absolute right-2.5 mt-1.5 mr-1"
-            >
-              <Search className="text-primry" />
-            </button>
           </div>
           <div className="w-1/4 md:flex border">
             <select
@@ -344,6 +332,14 @@ function Promotion({ products, categories }) {
                     </p>
                   )}
                 </div>
+                <div className="flex justify-center gap-2">
+                  <Rate
+                    allowHalf
+                    disabled
+                    defaultValue={calculateAverageRating(item.id, reviews)}
+                    style={{ fontSize: "18px" }}
+                  />
+                </div>
                 <Divider>
                   <Button
                     className="bg-black text-white hover:bg-white font-light"
@@ -354,13 +350,6 @@ function Promotion({ products, categories }) {
                     Chi tiết
                   </Button>
                 </Divider>
-                {/* <div className="flex justify-between px-[0.5rem]">
-                  <div className="font-roboto text-sm opacity-50 font-normal flex gap-[4px]">
-                      <p>{item.rating.rate}</p>
-                      <p>({item.rating.count})</p>
-                  </div>
-                  <p className="font-roboto text-sm opacity-50 font-normal">{item.sell} <span>đã bán</span></p>
-              </div> */}
               </div>
             </div>
           ))}
@@ -382,15 +371,18 @@ export default memo(Promotion);
 
 export async function getStaticProps() {
   try {
-    const [productsResponse, categoriesResponse] = await Promise.all([
-      axiosClient.get("/products"),
-      axiosClient.get("/categories"),
-    ]);
+    const [productsResponse, categoriesResponse, reviewsResponse] =
+      await Promise.all([
+        axiosClient.get("/products"),
+        axiosClient.get("/categories"),
+        axiosClient.get("/reviews"),
+      ]);
 
     return {
       props: {
         products: productsResponse.data,
         categories: categoriesResponse.data,
+        reviews: reviewsResponse.data,
       },
     };
   } catch (error) {
