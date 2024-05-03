@@ -18,14 +18,20 @@ function NewProduct({ products, reviews }) {
   const currentDate = new Date();
 
   function filterNewProducts(products) {
+    if (!products || !Array.isArray(products)) {
+      // Check if products is undefined or not an array
+      return [];
+    }
+
     return products.filter((product) => {
       const createdAtTimestamp = new Date(product.createdAt).getTime();
       const timeDifference = currentDate.getTime() - createdAtTimestamp;
-      return timeDifference <= THIRTY_DAYS_IN_MS; // Chỉ lấy các sản phẩm được tạo trong vòng 30 ngày trước
+      return timeDifference <= THIRTY_DAYS_IN_MS;
     });
   }
 
-  const newProducts = filterNewProducts(products);
+  // Ensure products is defined before calling filterNewProducts
+  const newProducts = filterNewProducts(products || []);
 
   const swiperRef = useRef();
 
@@ -36,6 +42,10 @@ function NewProduct({ products, reviews }) {
   });
 
   const calculateAverageRating = (productId, reviews) => {
+    if (!Array.isArray(reviews)) {
+      // Ensure reviews is an array
+      return "0";
+    }
     const productReviews = reviews.filter(
       (review) => review.productId === productId
     );
