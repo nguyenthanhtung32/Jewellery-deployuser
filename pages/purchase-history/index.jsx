@@ -1,6 +1,6 @@
 import React, { memo, useEffect, useState } from "react";
 import numeral from "numeral";
-import { BackTop, Modal, Input, Rate } from "antd";
+import { BackTop, Modal, Input, Rate, Popconfirm, Form } from "antd";
 import axiosClient from "@/libraries/axiosClient";
 import { API_URL } from "@/constants";
 import Moment from "moment";
@@ -16,10 +16,40 @@ function PurchaseHistory() {
   const [orders, setOrders] = useState([]);
   const [selectedProductId, setSelectedProductId] = useState(null);
   const [reviewedProducts, setReviewedProducts] = useState({});
+  const [customers, setCustomers] = useState([]);
+  const [reviews, setReviews] = useState("");
+  const [updateId, setUpdateId] = useState(0);
+  const [updateForm] = Form.useForm();
 
   useEffect(() => {
     fetchOrders();
+    fetchReviews();
   }, []);
+
+  const fetchReviews = async () => {
+    try {
+      axiosClient.get("/reviews").then((response) => {
+        const { data } = response;
+        setReviews(data);
+      });
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
+  const onUpdateFinish = (values) => {
+    axiosClient
+      .patch("/reviews" + "/" + updateId, values)
+      .then((_response) => {
+        updateForm.resetFields();
+        toast.success("Sửa đánh giá thành công");
+        setOpen(false);
+        router.reload("/purchase-history");
+      })
+      .catch((err) => {
+        console.error(err);
+      });
+  };
 
   useEffect(() => {
     if (orders.length > 0) {
@@ -50,6 +80,8 @@ function PurchaseHistory() {
       const decoded = jwtDecode(token);
       const customerId = decoded._id;
 
+      setCustomers(customerId);
+
       const response = await axiosClient.get(`/orders/${customerId}`);
       const data = response.data.results;
 
@@ -65,6 +97,8 @@ function PurchaseHistory() {
   };
 
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [open, setOpen] = useState(false);
+  const [isModalOpenReview, setIsModalOpenReview] = useState(false);
   const [rating, setRating] = useState(0);
   const [comment, setComment] = useState("");
 
@@ -104,6 +138,8 @@ function PurchaseHistory() {
 
       toast.success("Bạn đã đánh giá thành công!");
 
+      router.reload("/purchase-history");
+
       const updatedReviewedProducts = {
         ...reviewedProducts,
         [selectedProductId._id]: true,
@@ -123,6 +159,7 @@ function PurchaseHistory() {
 
   const handleCancel = () => {
     setIsModalOpen(false);
+    setIsModalOpenReview(false);
   };
 
   const handleCancelOrder = async (orderId) => {
@@ -134,6 +171,7 @@ function PurchaseHistory() {
       if (response.status === 200) {
         await axiosClient.patch(`/orders/return-stock/${orderId}`);
         fetchOrders();
+        toast.success("Đơn hàng đã được hủy", 1.5);
       } else {
         console.error("Có lỗi xảy ra khi hủy đơn hàng");
       }
@@ -173,17 +211,43 @@ function PurchaseHistory() {
     router.push(`/${productId._id}`);
   };
 
-  const HuyDonAction = (status, order) => {
+  const HuyDonAction = (status, orderId) => {
     if (status === "WAITING") {
       return (
-        <button
-          className="mr-5 bg-primry text-white font-bold w-[150px] h-[40px] rounded-full hover:bg-white hover:text-primry hover:border-primry hover:border"
-          onClick={() => handleCancelOrder(order)}
+        <Popconfirm
+          title="Bạn chắc chắn muốn hủy đơn hàng?"
+          onConfirm={() => handleCancelOrder(orderId)}
+          okText="Có"
+          okButtonProps={{ className: "bg-black" }}
+          cancelText="Không"
         >
-          Hủy đơn hàng
+          <button className="mr-5 bg-primry text-white font-bold w-[150px] h-[40px] rounded-full hover:bg-white hover:text-primry hover:border-primry hover:border">
+            Hủy đơn hàng
+          </button>
+        </Popconfirm>
+      );
+    }
+  };
+
+  const getReview = (status, productId) => {
+    const isReviewed = reviewedProducts[productId._id];
+
+    if (status === "COMPLETE" && isReviewed) {
+      return (
+        <button
+          className="bg-primry text-white font-bold w-[150px] h-[40px] rounded-full hover:bg-white hover:text-primry hover:border-primry hover:border mr-5"
+          onClick={() => handleReview(productId)}
+        >
+          Xem đánh giá
         </button>
       );
     }
+    return null;
+  };
+
+  const handleReview = (productId) => {
+    setSelectedProductId(productId);
+    setIsModalOpenReview(true);
   };
 
   const getStatusText = (status) => {
@@ -205,6 +269,8 @@ function PurchaseHistory() {
       return "VNPAY";
     }
   };
+
+  const text = "Bạn chắc chắn muốn xóa đánh giá ?";
 
   return (
     <div className="py-14  md:px-6 xl:px-20 xl:container ">
@@ -287,7 +353,7 @@ function PurchaseHistory() {
                             )}
                             <Modal
                               title={"Đánh giá sản phẩm"}
-                              visible={isModalOpen}
+                              open={isModalOpen}
                               onOk={handleOk}
                               onCancel={handleCancel}
                               className="font-roboto text-sm"
@@ -341,7 +407,134 @@ function PurchaseHistory() {
                     })}
                   </div>
                   <div className="mb-2 flex justify-end">
-                    {HuyDonAction(order.status, order._id)}
+                    {order.orderDetails.map((detail, index) => {
+                      return (
+                        <div key={index}>
+                          {getReview(order.status, detail.productId, order)}
+                        </div>
+                      );
+                    })}
+                    <Modal
+                      title="Đã đánh giá"
+                      open={isModalOpenReview}
+                      onCancel={handleCancel}
+                      footer={null}
+                    >
+                      {selectedProductId &&
+                        (reviews.some(
+                          (item) =>
+                            item.customerId === customers &&
+                            item.productId === selectedProductId._id
+                        ) ? (
+                          reviews.map((item) => {
+                            if (
+                              item.customerId === customers &&
+                              item.productId === selectedProductId._id
+                            ) {
+                              return (
+                                <>
+                                  <div className="flex">
+                                    <div className="max-w-[100px]">
+                                      <img
+                                        src={`${API_URL}${selectedProductId.imageUrl}`}
+                                        alt={`Image-${selectedProductId._id}`}
+                                        className="object-contain"
+                                      />
+                                    </div>
+                                    <h3 className="font-roboto flex items-center justify-center">
+                                      {selectedProductId.productName}
+                                    </h3>
+                                  </div>
+                                  <div className="mb-4">
+                                    Nội dung: {item.comment}
+                                  </div>
+                                  <div className="flex gap-2 mt-2">
+                                    <div className="mb-4">Chất lượng:</div>
+                                    <Rate
+                                      allowHalf
+                                      disabled
+                                      defaultValue={item.ratingRate}
+                                      style={{ fontSize: "18px" }}
+                                    />
+                                  </div>
+                                  <div className="justify-center flex space-x-8 my-4">
+                                    <button
+                                      className="bg-primry text-white font-bold w-[120px] h-[40px] rounded-full hover:bg-white hover:text-primry hover:border-primry hover:border"
+                                      onClick={() => {
+                                        setOpen(true);
+                                        setUpdateId(item._id);
+                                        updateForm.setFieldsValue(item);
+                                      }}
+                                    >
+                                      Sửa
+                                    </button>
+                                    <Popconfirm
+                                      placement="top"
+                                      title={text}
+                                      onConfirm={() => {
+                                        axiosClient
+                                          .delete("/reviews" + "/" + item._id)
+                                          .then(() => {
+                                            toast.success(
+                                              "Xóa đánh giá thành công"
+                                            );
+                                            router.reload();
+                                          });
+                                      }}
+                                      okText="Có"
+                                      okButtonProps={{
+                                        className: "bg-black text-white",
+                                      }}
+                                      cancelText="Không"
+                                    >
+                                      <button className="bg-primry text-white font-bold w-[120px] h-[40px] rounded-full hover:bg-white hover:text-primry hover:border-primry hover:border">
+                                        Xóa
+                                      </button>
+                                    </Popconfirm>
+                                    <Modal
+                                      open={open}
+                                      onCancel={() => setOpen(false)}
+                                      cancelText="Hủy"
+                                      okText="Cập nhật"
+                                      okButtonProps={{
+                                        style: {
+                                          color: "white",
+                                          background: "black",
+                                        },
+                                      }}
+                                      onOk={() => updateForm.submit()}
+                                      title="Sửa đánh giá"
+                                    >
+                                      <Form
+                                        form={updateForm}
+                                        name="update-form"
+                                        onFinish={onUpdateFinish}
+                                      >
+                                        <Form.Item
+                                          label="Chất lượng sản phẩm"
+                                          name="ratingRate"
+                                        >
+                                          <Rate allowHalf />
+                                        </Form.Item>
+                                        <Form.Item
+                                          label="Nội dung"
+                                          name="comment"
+                                        >
+                                          <TextArea />
+                                        </Form.Item>
+                                      </Form>
+                                    </Modal>
+                                  </div>
+                                </>
+                              );
+                            }
+                          })
+                        ) : (
+                          <p>Bạn đã xóa đánh giá</p>
+                        ))}
+                    </Modal>
+
+                    <div>{HuyDonAction(order.status, order._id)}</div>
                   </div>
                 </div>
               );
@@ -418,7 +611,7 @@ function PurchaseHistory() {
                             )}
                             <Modal
                               title={"Đánh giá sản phẩm"}
-                              visible={isModalOpen}
+                              open={isModalOpen}
                               onOk={handleOk}
                               onCancel={handleCancel}
                               className="font-roboto text-sm"
@@ -478,7 +671,6 @@ function PurchaseHistory() {
               );
             })}
       </div>
-
       <BackTop />
     </div>
   );
